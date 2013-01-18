@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import sys, time, wiringpi
 from decimal import *
 

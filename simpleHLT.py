@@ -39,7 +39,14 @@ def main(target, pin):
             switch(io, 7, off)
         
 try: 
-    target = Decimal(sys.argv[1])
+    if len(sys.argv) < 2:
+        print 'usage: ' + sys.argv[0] + ' targettemp'
+        sys.exit()
+    if sys.argv[1].isdigit():    
+        target = Decimal(sys.argv[1])
+    else:
+        print 'target must be a number'
+        sys.exit()
     main(target)
 except (KeyboardInterrupt, SystemExit):
-    exit
+    sys.exit()

@@ -3,27 +3,25 @@ import sys, time, wiringpi
 from decimal import *
 from smbus import SMBus
 import sqlite3
+from Adafruit_MCP230xx import *
 
-
-
-#sets heat on or off for a gpio pin. needs changing to adafruit expansion.
-def switch(gpio,pin,heatIsOn):
-#    gpio.digitalWrite(pin,state)
-    bus = SMBus(0)
-    address = 0x26
-    bus.write_byte_data(address,0x00,0x00)
+'''
+Takes the pin on a jeelabs output plug and sets it to 1 or 0 depending on if the heat should be on or not.
+'''
+def switch(pin,heatIsOn):
+    jee = Adafruit_MCP230XX(address = 0x26, num_gpios = 8)
     if heatIsOn:
-        bus.write_byte_data(address,0x09,0x01)
+        jee.output(pin,1)
     else:
-        bus.write_byte_data(address,0x09,0x00)
+        jee.output(pin,0)
     return
+
 # returns temperature of the 1wire sensor. Needs to be abstracted more.    
+# catches for if owfs is not running would be good. or bitbang.
 def get_temp():
     with open('/mnt/1wire/28.49B94A040000/temperature','r') as f:
         temp = Decimal(f.readline().strip())
         print temp
-
-
         return temp
 
 #makes database connection, and creates the table if it doesn't exist yet.
@@ -41,6 +39,7 @@ def updatedb(temp, target, state, pin, sql):
     cursor = sql.cursor()
     cursor.execute('INSERT INTO templog VALUES(?,?,?,?,?)',data)
     cursor.close()
+
 
 '''
 Sets pin to output mode, if temp is less than target+band then pin is on otherwise it's off
@@ -81,3 +80,4 @@ try:
     main(target, 7)
 except (KeyboardInterrupt, SystemExit):
     sys.exit()
+    #set all output to off for sanity

@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <!--[if IE]>
+    <script type="text/javascript" src="../excanvas.js"></script>
+    <![endif]-->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>  
+    <script type="text/javascript" src="/static/dygraph-combined.js"></script>
+
+  </head>
+  <body>
+    <h3 style="width:800px; text-align: center;">Live random data</h3>
+    <div id="div_g" style="width:800px; height:400px;"></div>
+
+    <script type="text/javascript">
+      var data = '/hlt.json';
+      var g = new Dygraph(document.getElementById("div_g"), data,
+                          {
+                            drawPoints: true,
+                            showRoller: true,
+                            labels: ['Time', 'Random']
+                          });
+      setInterval(function() {
+        $.getJson('hlt.json'), function(jdata) {
+          var x = jdata[0]
+          var y = jdata[1]
+          data.push([x, y]);
+          g.updateOptions( { 'file': data } );
+        };  
+      
+        
+      }, 1000);
+
+    </script>
+  </body>
+</html>
+

@@ -18,8 +18,8 @@ def switch(jee,pin,heatIsOn):
 # returns temperature of the 1wire sensor. Needs to be abstracted more.    
 # catches for if owfs is not running would be good. or bitbang.
 def get_temp():
-    #with open('/mnt/1wire/28.49B94A040000/temperature','r') as f:
-    with open('/mnt/1wire/10.67C6697351FF/temperature','r') as f:
+    with open('/mnt/1wire/28.49B94A040000/temperature','r') as f:
+    #with open('/mnt/1wire/10.67C6697351FF/temperature','r') as f:
         temp = Decimal(f.readline().strip())
         return temp
 

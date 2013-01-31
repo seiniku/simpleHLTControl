@@ -5,8 +5,9 @@ import simplejson as json
 import datetime,time
 app = Flask(__name__)
 # configuration
-DATABASE = '/home/jkeppers/simpleHLT/db_simple.db'
+app.config['SECRET_KEY'] = 'F34TF$($e34D';
 
+DATABASE = '/home/jkeppers/simpleHLT/db_simple.db'
 def adapt_decimal(d):
     return str(d)
 
@@ -16,7 +17,21 @@ def convert_decimal(s):
 @app.route('/hlt')
 def hlt():
     return render_template('hltgraph.html')
-
+    
+@app.route('/changehlttemp', methods=['POST'])
+def changehlttemp():
+    session['hlttemp'] = request.form['hlttemp']
+    session['brewid'] = request.form['brewid']
+    brewid = session['brewid']
+    temp = session['hlttemp']
+    print "update temp to " + temp
+    sqlite3.register_adapter(Decimal, adapt_decimal)
+    sqlite3.register_converter("decimal", convert_decimal)
+    conn = sqlite3.connect('/home/jkeppers/simpleHLTControl/db_simple.db', detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE tempconfig SET target=? WHERE brewid=?",[temp,brewid])
+    
+    return redirect(url_for('hlt'))
 
 def getcurrentdata():
     sqlite3.register_adapter(Decimal, adapt_decimal)

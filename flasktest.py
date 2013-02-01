@@ -13,10 +13,19 @@ def adapt_decimal(d):
 
 def convert_decimal(s):
     return Decimal(s) 
+def getConn():
+    sqlite3.register_adapter(Decimal, adapt_decimal)
+    sqlite3.register_converter("decimal", convert_decimal)
+    conn = sqlite3.connect('/home/jkeppers/simpleHLTControl/db_simple.db', detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+    return conn            
 
 @app.route('/hlt')
 def hlt():
-    return render_template('hltgraph.html')
+    conn = getConn()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id from brewday") 
+    brewlist = cursor.fetchall()
+    return render_template('hltgraph.html',brewid=brewlist)
     
 @app.route('/changehlttemp', methods=['POST'])
 def changehlttemp():

@@ -103,7 +103,11 @@
     
     <form id="hltform" method="post" action="/changehlttemp" >
         <p><label>HLT Temp:</label><input type="text" name="hlttemp"  required></p>
-        <p><label>Brewid:</label><input type="text" name="brewid"  required></p>
+        <select name="brewid" required>
+        {% for id in brewid %}
+            <option value="{{ id[0] }}"> {{ id[0] }}</option>
+        {% endfor %}
+        </select>
         <p><button type="submit" id="newtempbtn" >Send</button></p>
     </form>
     </form>

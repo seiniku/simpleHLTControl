@@ -9,9 +9,5 @@ This depends on the jeelabs output plug to have the address 0x26. Note that the 
 
 Adafruit libraries are being used to interface with the output plug in a readable way. They were taken from https://github.com/adafruit/Adafruit-Raspberry-Pi-Python-Code, I take no credit for them. Worked great out of the box.
 
-
-potentially depends on celery for async web stuff. rabbitmq for the message queue, flask for the web
-sudo pip install celery 
-sudo apt-get install rabbitmq-server
-sudo pip install flask
-
+aptitude install pip
+pip install flask

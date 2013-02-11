@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, time, wiringpi
+import sys, time
 from decimal import *
 from smbus import SMBus
 import sqlite3,datetime
@@ -8,20 +8,31 @@ from Adafruit_MCP230xx import *
 '''
 Takes the pin on a jeelabs output plug and sets it to 1 or 0 depending on if the heat should be on or not.
 '''
-def switch(jee,pin,heatIsOn):
-    if heatIsOn:
+def switch(jee,pin,duty_cycle):
+    cycle_time = 2
+    if duty_cycle > 0:
+        duty = duty_cycle/100.0
+        #on for xtime
         jee.output(pin,1)
+	print "on"
+        time.sleep(cycle_time*(duty))
+        #off for ytime
+        jee.output(pin,0)
+	print "off"
+        time.sleep(cycle_time*(1.0-duty))
     else:
         jee.output(pin,0)
+        time.sleep(cycle_time)
+
     return
 
-# returns temperature of the 1wire sensor. Needs to be abstracted more.    
+# returns temperature of the 1wire sensor. Needs to be abstracted more.
 # catches for if owfs is not running would be good. or bitbang.
 def get_temp():
     with open('/mnt/1wire/28.49B94A040000/temperature','r') as f:
     #with open('/mnt/1wire/10.67C6697351FF/temperature','r') as f:
         temp = Decimal(f.readline().strip())
-        return temp
+        return temp + 8
 
 #makes database connection, and creates the table if it doesn't exist yet.
 def connectdb():
@@ -38,7 +49,7 @@ def connectdb():
 
 #updates the relevant info in the database.
 def updatedb(brewid, temp, target, state, element, sql):
-    time = datetime.datetime.now() 
+    time = datetime.datetime.now()
     data =(brewid,time,temp,target,state,element)
     cursor = sql.cursor()
     cursor.execute('INSERT INTO templog (brewid,time, temp, target, state, element) VALUES (?,?,?,?,?,?)',data)
@@ -53,7 +64,7 @@ def convert_decimal(s):
 #could be moved to a database configuration. this will work for now.
 def getpin(element):
     if element.lower() == "hlt":
-        pin = 0
+        pin = 4
     elif element.lower() == "boil":
         pin = 1
     elif element.lower() == "test":
@@ -65,7 +76,7 @@ def getpin(element):
 
 '''
 Configures all pins as output pins and sets them to 'low'. This is to prevent any relay from being left on
-unexpectedly. 
+unexpectedly.
 '''
 def turnItAllOff(jee, gpioCount):
     print "Disabling all output pins"
@@ -91,7 +102,7 @@ def settarget(brewid, element, target, sql):
 def gettarget(brewid, element, sql):
     ids = brewid, element
     cursor = sql.cursor()
-    cursor.execute('SELECT target FROM tempconfig where brewid = ? AND element = ?',ids) 
+    cursor.execute('SELECT target FROM tempconfig where brewid = ? AND element = ?',ids)
     return cursor.fetchone()[0]
 
 '''
@@ -115,31 +126,37 @@ def tempcontrol():
     #there are 8 plugs on the JeeLabs Output Plug.
     gpios = 8
     #create output plug object
-    jee = Adafruit_MCP230XX(address = 0x26, num_gpios = gpios)
+    jee = Adafruit_MCP230XX(address = 0x26, num_gpios = gpios, busnum = 1)
     #set all output plug pins to output and off
-    turnItAllOff(jee,gpios) 
+    turnItAllOff(jee,gpios)
     #the temp swing that is allowed. ie temp +- band
     band = Decimal(0.2)
     isHeatOn = False
+    duty = 0
     try:
         while (True):
             temp = get_temp()
-            print str(temp) + " target: " + str(target)
-            if temp < (target - band):
-                print "on"
-                isHeatOn = True
+            if temp < (target - 10):
+                duty = 100
+            elif (target - 10) < temp < (target - band):
+                duty = 50
+            elif (target - 5) < temp < (target - band):
+                duty = 25
             elif temp > (target + band):
-                print "off"
-                isHeatOn = False
+                duty = 0
             else:
                 print "Operating within normal parameters."
-            updatedb(brewid, temp, target, isHeatOn, element, database)
-            target = gettarget(brewid, element, database)
-            switch(jee, pin, isHeatOn)
-            time.sleep(1)
+                duty = 0
+            print "temp: " + str(temp) + " duty: " + str(duty) + " target: " + str(target)
+            print "updating database"
+	    updatedb(brewid, temp, target, isHeatOn, element, database)
+            print "getting target"
+	    target = gettarget(brewid, element, database)
+	    print "switching"
+            switch(jee, pin, duty)
     except (KeyboardInterrupt, SystemExit):
         turnItAllOff(jee,gpios)
         sys.exit()
 
-if __name__ == "__main__":        
+if __name__ == "__main__":
    tempcontrol()

@@ -1,6 +1,5 @@
 from flask import *
-from decimal import *
-import sqlite3
+import MySQLdb as mdb
 import simplejson as json
 import datetime,time
 app = Flask(__name__)
@@ -8,15 +7,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'F34TF$($e34D';
 
 DATABASE = '/home/jkeppers/simpleHLT/db_simple.db'
-def adapt_decimal(d):
-    return str(d)
-
-def convert_decimal(s):
-    return Decimal(s) 
 def getConn():
-    sqlite3.register_adapter(Decimal, adapt_decimal)
-    sqlite3.register_converter("decimal", convert_decimal)
-    conn = sqlite3.connect('/home/jkeppers/simpleHLTControl/db_simple.db', detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+    conn = mdb.connect('chop.bad.wolf','brew','brewit','brewery');
     return conn            
 
 @app.route('/hlt')
@@ -25,6 +17,7 @@ def hlt():
     cursor = conn.cursor()
     cursor.execute("SELECT id from brewday") 
     brewlist = cursor.fetchall()
+    conn.close()
     return render_template('hltgraph.html',brewid=brewlist)
     
 @app.route('/changehlttemp', methods=['POST'])
@@ -34,25 +27,23 @@ def changehlttemp():
     brewid = session['brewid']
     temp = session['hlttemp']
     print "update temp to " + temp
-    sqlite3.register_adapter(Decimal, adapt_decimal)
-    sqlite3.register_converter("decimal", convert_decimal)
-    conn = sqlite3.connect('/home/jkeppers/simpleHLTControl/db_simple.db', detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+    conn = getConn()
     cursor = conn.cursor()
     cursor.execute("UPDATE tempconfig SET target=? WHERE brewid=?",[temp,brewid])
-    
+    conn.commit()
+    conn.close()
     return redirect(url_for('hlt'))
 
 def getcurrentdata():
-    sqlite3.register_adapter(Decimal, adapt_decimal)
-    sqlite3.register_converter("decimal", convert_decimal)
-    conn = sqlite3.connect('/home/jkeppers/simpleHLTControl/db_simple.db', detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+    conn = getConn()
     cursor = conn.cursor()
     cursor.execute("SELECT time,temp FROM templog where time = (select max(time) from templog)")
+    conn.close()
     return cursor.fetchone()
 
 
 @app.route('/hlt.json')
-def hello_world():
+def latest_json():
     data = list(getcurrentdata())
     data[0] = int(time.mktime(data[0].timetuple()) * 1000)
     print type(data[0])
@@ -63,4 +54,4 @@ def hello_world():
     return jsonify(time=thetime, temp=thetemp)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True)
+    app.run(host='0.0.0.0',port=80,debug=True)

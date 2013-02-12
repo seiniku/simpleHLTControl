@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import sys, time
-from decimal import *
 from smbus import SMBus
 import sqlite3,datetime
 from Adafruit_MCP230xx import *
@@ -31,14 +30,11 @@ def switch(jee,pin,duty_cycle):
 def get_temp():
     with open('/mnt/1wire/28.49B94A040000/temperature','r') as f:
     #with open('/mnt/1wire/10.67C6697351FF/temperature','r') as f:
-        temp = Decimal(f.readline().strip())
+        temp = f.readline().strip()
         return temp + 8
 
 #makes database connection, and creates the table if it doesn't exist yet.
 def connectdb():
-    sqlite3.register_adapter(Decimal, adapt_decimal)
-    sqlite3.register_converter("decimal", convert_decimal)
-
     conn = sqlite3.connect("db_simple.db", detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
     cursor = conn.cursor()
     cursor.execute('create table if not exists templog (brewid INTEGER, time TIMESTAMP, temp REAL, target DECIMAL, state BOOLEAN, element STRING, FOREIGN KEY(brewid) REFERENCES brewlog(id))')
@@ -55,11 +51,6 @@ def updatedb(brewid, temp, target, state, element, sql):
     cursor.execute('INSERT INTO templog (brewid,time, temp, target, state, element) VALUES (?,?,?,?,?,?)',data)
     cursor.close()
 
-def adapt_decimal(d):
-    return str(d)
-
-def convert_decimal(s):
-    return Decimal(s)
 
 #could be moved to a database configuration. this will work for now.
 def getpin(element):
@@ -130,7 +121,7 @@ def tempcontrol():
     #set all output plug pins to output and off
     turnItAllOff(jee,gpios)
     #the temp swing that is allowed. ie temp +- band
-    band = Decimal(0.2)
+    band = 0.2
     isHeatOn = False
     duty = 0
     try:

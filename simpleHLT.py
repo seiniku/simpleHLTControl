@@ -1,9 +1,9 @@
 #!/usr/bin/python
 import sys, time
 from smbus import SMBus
-import sqlite3,datetime
+import datetime
 from Adafruit_MCP230xx import *
-
+import MySQLdb as mdb
 '''
 Takes the pin on a jeelabs output plug and sets it to 1 or 0 depending on if the heat should be on or not.
 '''
@@ -28,18 +28,18 @@ def switch(jee,pin,duty_cycle):
 # returns temperature of the 1wire sensor. Needs to be abstracted more.
 # catches for if owfs is not running would be good. or bitbang.
 def get_temp():
-    with open('/mnt/1wire/28.49B94A040000/temperature','r') as f:
-    #with open('/mnt/1wire/10.67C6697351FF/temperature','r') as f:
-        temp = f.readline().strip()
+    #with open('/mnt/1wire/28.49B94A040000/temperature10','r') as f:
+    with open('/mnt/1wire/28.67C6697351FF/temperature10','r') as f:
+        temp = float(f.readline().strip())
         return temp + 8
 
 #makes database connection, and creates the table if it doesn't exist yet.
 def connectdb():
-    conn = sqlite3.connect("db_simple.db", detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+    conn = mdb.connect('chop.bad.wolf','brew','brewit','brewery');
     cursor = conn.cursor()
-    cursor.execute('create table if not exists templog (brewid INTEGER, time TIMESTAMP, temp REAL, target DECIMAL, state BOOLEAN, element STRING, FOREIGN KEY(brewid) REFERENCES brewlog(id))')
-    cursor.execute('create table if not exists brewday (id INTEGER PRIMARY KEY, brew TEXT, brewdate DATETIME default CURRENT_DATE)')
-    cursor.execute('create table if not exists tempconfig (brewid INTEGER, target DECIMAL, swing DECIMAL, element STRING, FOREIGN KEY(brewid) REFERENCES brewlog(id))')
+    cursor.execute('create table if not exists brewlog (id INTEGER NOT NULL AUTO_INCREMENT, brew TEXT, brewdate timestamp default CURRENT_TIMESTAMP, PRIMARY KEY (id))')
+    cursor.execute('create table if not exists templog (brewid INTEGER, time TIMESTAMP, temp REAL, target REAL, state BOOLEAN, element TEXT, FOREIGN KEY(brewid) REFERENCES brewlog(id))')
+    cursor.execute('create table if not exists tempconfig (brewid INTEGER, target REAL, swing REAL, element TEXT, FOREIGN KEY(brewid) REFERENCES brewlog(id))')
     cursor.close()
     return conn
 
@@ -48,7 +48,8 @@ def updatedb(brewid, temp, target, state, element, sql):
     time = datetime.datetime.now()
     data =(brewid,time,temp,target,state,element)
     cursor = sql.cursor()
-    cursor.execute('INSERT INTO templog (brewid,time, temp, target, state, element) VALUES (?,?,?,?,?,?)',data)
+    cursor.execute('INSERT INTO templog (brewid,time, temp, target, state, element) VALUES (%s,%s,%s,%s,%s,%s)',data)
+    sql.commit()
     cursor.close()
 
 
@@ -76,24 +77,36 @@ def turnItAllOff(jee, gpioCount):
         switch(jee,pin,False)
 
 def getUserInput():
-    brewinput = raw_input("What type of beer are we brewing? ")
-    if not brewinput:
-        brewinput = "testbrau"
-    element = raw_input("Which element is this?(HLT,boil)")
-    if not element:
-        element = "HLT"
+    docontinue = raw_input("Are we continuing the last brew (Yes,no)")
+    if not docontinue:
+        docontinue = "yes"
+    if docontinue.lower() == "yes":
+        #do stuff.
+        print "i can't do that"
+    else:
+        brewinput = raw_input("What type of beer are we brewing? ")
+        if not brewinput:
+            brewinput = "testbrau"
+        element = raw_input("Which element is this?(hlt,boil,TEST)")
+        if not element:
+            element = "test"
+
     return brewinput, element
+
 
 def settarget(brewid, element, target, sql):
     data = target, brewid, element
     cursor = sql.cursor()
-    cursor.execute('update tempconfig set target=? WHERE brewid = ? AND element = ?',data)
+    cursor.execute('update tempconfig set target=%s WHERE brewid = %s AND element = %s',data)
+    sql.commit()
     cursor.close()
 
+
+#gets the target from the database
 def gettarget(brewid, element, sql):
     ids = brewid, element
     cursor = sql.cursor()
-    cursor.execute('SELECT target FROM tempconfig where brewid = ? AND element = ?',ids)
+    cursor.execute('SELECT target FROM tempconfig where brewid = %s AND element = %s',ids)
     return cursor.fetchone()[0]
 
 '''
@@ -105,11 +118,15 @@ def tempcontrol():
     database = connectdb()
     brewname, element = getUserInput()
     pin = getpin(element)
-
+#try
     cursor = database.cursor()
-    cursor.execute('INSERT INTO brewday (brew) VALUES (?)',[brewname] )
+    cursor.execute('INSERT INTO brewlog (brew) VALUES (%s)',[brewname] )
     brewid = cursor.lastrowid
-    cursor.execute('INSERT INTO tempconfig (brewid, target, element) VALUES (?,?,?)',[brewid,target,element])
+    cursor.execute('INSERT INTO tempconfig (brewid, target, element) VALUES (%s,%s,%s)',[brewid,target,element])
+    database.commit()
+
+
+#etry
     settarget(brewid, element, target, database)
     print brewname + " has an id of " + str(brewid)
     print "output mode on " + element  + " pin " + str(pin)

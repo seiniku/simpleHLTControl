@@ -6,20 +6,19 @@ app = Flask(__name__)
 # configuration
 app.config['SECRET_KEY'] = 'F34TF$($e34D';
 
-DATABASE = '/home/jkeppers/simpleHLT/db_simple.db'
 def getConn():
     conn = mdb.connect('chop.bad.wolf','brew','brewit','brewery');
-    return conn            
+    return conn
 
 @app.route('/hlt')
 def hlt():
     conn = getConn()
     cursor = conn.cursor()
-    cursor.execute("SELECT id from brewday") 
+    cursor.execute("SELECT id from brewday")
     brewlist = cursor.fetchall()
     conn.close()
     return render_template('hltgraph.html',brewid=brewlist)
-    
+
 @app.route('/changehlttemp', methods=['POST'])
 def changehlttemp():
     session['hlttemp'] = request.form['hlttemp']
@@ -29,7 +28,7 @@ def changehlttemp():
     print "update temp to " + temp
     conn = getConn()
     cursor = conn.cursor()
-    cursor.execute("UPDATE tempconfig SET target=? WHERE brewid=?",[temp,brewid])
+    cursor.execute("UPDATE tempconfig SET target=%s WHERE brewid=%s",[temp,brewid])
     conn.commit()
     conn.close()
     return redirect(url_for('hlt'))
@@ -48,7 +47,7 @@ def latest_json():
     data[0] = int(time.mktime(data[0].timetuple()) * 1000)
     print type(data[0])
 
-    #return json.dumps(data) 
+    #return json.dumps(data)
     thetime = data[0]
     thetemp = data[1]
     return jsonify(time=thetime, temp=thetemp)

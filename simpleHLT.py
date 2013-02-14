@@ -38,17 +38,17 @@ def connectdb():
     conn = mdb.connect('chop.bad.wolf','brew','brewit','brewery');
     cursor = conn.cursor()
     cursor.execute('create table if not exists brewlog (id INTEGER NOT NULL AUTO_INCREMENT, brew TEXT, brewdate timestamp default CURRENT_TIMESTAMP, PRIMARY KEY (id))')
-    cursor.execute('create table if not exists templog (brewid INTEGER, time TIMESTAMP, temp REAL, target REAL, state BOOLEAN, element TEXT, FOREIGN KEY(brewid) REFERENCES brewlog(id))')
+    cursor.execute('create table if not exists templog (brewid INTEGER, time TIMESTAMP, temp REAL, target REAL, duty INTEGER, element TEXT, FOREIGN KEY(brewid) REFERENCES brewlog(id))')
     cursor.execute('create table if not exists tempconfig (brewid INTEGER, target REAL, swing REAL, element TEXT, FOREIGN KEY(brewid) REFERENCES brewlog(id))')
     cursor.close()
     return conn
 
 #updates the relevant info in the database.
-def updatedb(brewid, temp, target, state, element, sql):
+def updatedb(brewid, temp, target, duty, element, sql):
     time = datetime.datetime.now()
-    data =(brewid,time,temp,target,state,element)
+    data =(brewid,time,temp,target,duty,element)
     cursor = sql.cursor()
-    cursor.execute('INSERT INTO templog (brewid,time, temp, target, state, element) VALUES (%s,%s,%s,%s,%s,%s)',data)
+    cursor.execute('INSERT INTO templog (brewid,time, temp, target, duty, element) VALUES (%s,%s,%s,%s,%s,%s)',data)
     sql.commit()
     cursor.close()
 
@@ -139,7 +139,6 @@ def tempcontrol():
     turnItAllOff(jee,gpios)
     #the temp swing that is allowed. ie temp +- band
     band = 0.2
-    isHeatOn = False
     duty = 0
     try:
         while (True):
@@ -157,13 +156,14 @@ def tempcontrol():
                 duty = 0
             print "temp: " + str(temp) + " duty: " + str(duty) + " target: " + str(target)
             print "updating database"
-	    updatedb(brewid, temp, target, isHeatOn, element, database)
+	    updatedb(brewid, temp, target, duty, element, database)
             print "getting target"
 	    target = gettarget(brewid, element, database)
 	    print "switching"
             switch(jee, pin, duty)
     except (KeyboardInterrupt, SystemExit):
         turnItAllOff(jee,gpios)
+        database.close()
         sys.exit()
 
 if __name__ == "__main__":

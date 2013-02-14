@@ -5,8 +5,11 @@
     <!--[if IE]>
     <script type="text/javascript" src="../excanvas.js"></script>
     <![endif]-->
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>  
-<script src="http://code.highcharts.com/stock/highstock.js"> </script>
+    <!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>  
+    --!>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+
+    <script src="http://code.highcharts.com/stock/highstock.js"> </script>
   </head>
   <body>
     <div id="container" style="height: 400px"></div>
@@ -34,12 +37,20 @@
             time: $('input[name="time"]').val(),
             temp: $('input[name="temp"]').val()
             }, function(data){
-                $("#result").text(data.time);
-                $("#resulttemp").text(data.temp);
                 chart.series[0].addPoint([data.time, data.temp], true);
             });
         };
         
+        function brewSelect(dropdown){
+            var brewindex = dropdown.selectedIndex;
+            var brewid = dropdown.options[brewindex].value;
+            $.getJSON("hlt_full.json",function(data)
+            {
+            console.log(data);
+            });
+            return true;
+        };
+
         var chart;
         
         //Chart bits
@@ -93,7 +104,7 @@
         },
         series: [{
             name: 'Temperature',
-            data: []
+            data: [] 
         }]
       });
         setInterval(requestData, 4000);
@@ -103,14 +114,13 @@
     
     <form id="hltform" method="post" action="/changehlttemp" >
         <p><label>HLT Temp:</label><input type="text" name="hlttemp"  required></p>
-        <select name="brewid" required>
+        <select name="brewid" onchange="brewSelect(this.form.brewid);" required>
         {% for id in brewid %}
             <option value="{{ id[0] }}"> {{ id[0] }}</option>
         {% endfor %}
         </select>
         <p><button type="submit" id="newtempbtn" >Send</button></p>
     </form>
-    </form>
-    </body>
+</body>
 </html>
 

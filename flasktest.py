@@ -14,7 +14,7 @@ def getConn():
 def hlt():
     conn = getConn()
     cursor = conn.cursor()
-    cursor.execute("SELECT id from brewday")
+    cursor.execute("SELECT id from brewlog")
     brewlist = cursor.fetchall()
     conn.close()
     return render_template('hltgraph.html',brewid=brewlist)
@@ -40,6 +40,22 @@ def getcurrentdata():
     conn.close()
     return cursor.fetchone()
 
+def getalldata(brewid):
+    conn = getConn()
+    cursor = conn.cursor()
+    cursor.execute("Select time,temp from templog where brewid=%s order by time",[brewid])
+    conn.close()
+    return cursor.fetchall()
+
+@app.route('/hlt_full.json')
+def full_json():
+    data = list(getalldata(3))
+    newdata = list()
+    for entry in data:
+        newdate = int(time.mktime(entry[0].timetuple()) * 1000)
+        newentry = {"time": newdate,"temp": entry[1]}
+        newdata.append(newentry)
+    return Response(json.dumps(newdata), mimetype='application/json')
 
 @app.route('/hlt.json')
 def latest_json():

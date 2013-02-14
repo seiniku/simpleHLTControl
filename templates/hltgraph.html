@@ -1,126 +1,127 @@
-
 <!DOCTYPE html>
 <html>
-  <head>
-    <!--[if IE]>
-    <script type="text/javascript" src="../excanvas.js"></script>
-    <![endif]-->
-    <!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>  
-    --!>
-    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-
-    <script src="http://code.highcharts.com/stock/highstock.js"> </script>
-  </head>
-  <body>
-    <div id="container" style="height: 400px"></div>
-    <script>
-    cartData= [];    
-        $(function () {
-    $(document).ready(function() {
     
-    $("#hltform").submit(function(){
-        $.post($("#hltform").attr("action"),$("#hltform").serialize(), function(data){
-        
-        });
-        return false;
-    });
-    
-       Highcharts.setOptions({
-            global:{
-                useUTC: false
-            }
-       });
-        //Function bits
-        function requestData(event) {
+    <head>
+        <!--[if IE]>
+            <script type="text/javascript" src="../excanvas.js"></script>
+        <![endif]-->
+        <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+        <script src="http://code.highcharts.com/stock/highstock.js">
             
-          $.getJSON("hlt.json", {
-            time: $('input[name="time"]').val(),
-            temp: $('input[name="temp"]').val()
-            }, function(data){
-                chart.series[0].addPoint([data.time, data.temp], true);
-            });
-        };
-        
-        function brewSelect(dropdown){
-            var brewindex = dropdown.selectedIndex;
-            var brewid = dropdown.options[brewindex].value;
-            $.getJSON("hlt_full.json",function(data)
-            {
-            console.log(data);
-            });
-            return true;
-        };
-
-        var chart;
-        
-        //Chart bits
-        chart = new Highcharts.StockChart({
-            chart: {
-                renderTo: 'container',
-                type: 'spline',
-                zoomType: 'x',
-                events:{
-                    load: requestData                           
-                }
-            },
-            xAxis: {
-                    type: 'datetime',
-                    title: 
-                    {text: 'Time'},
-                    tickPixelInterval: 150                   
-
-                    },
-            yAxis: {
-                title: {
-                text: 'Temperature'
-            }
-        },
-        rangeSelector: {
-            buttons: [{
-                type: 'second',
-                count: 30,
-                text: '30s'
-            }, {
-                type: 'minute',
-                count: 1,
-                text: '1m'
-            }, {
-                type: 'minute',
-                count: 2,
-                text: '2m'
-            }, {
-                type: 'minute',
-                count: 5,
-                text: '5m'
-            }, {
-                type: 'minute',
-                count: 15,
-                text: '15m'
-            }, {
-                type: 'all',
-                text: 'All'
-            }],
-            inputEnabled: false
-        },
-        series: [{
-            name: 'Temperature',
-            data: [] 
-        }]
-      });
-        setInterval(requestData, 4000);
-    });
-});
-    </script>
+        </script>
+    </head>
     
-    <form id="hltform" method="post" action="/changehlttemp" >
-        <p><label>HLT Temp:</label><input type="text" name="hlttemp"  required></p>
-        <select name="brewid" onchange="brewSelect(this.form.brewid);" required>
-        {% for id in brewid %}
-            <option value="{{ id[0] }}"> {{ id[0] }}</option>
-        {% endfor %}
-        </select>
-        <p><button type="submit" id="newtempbtn" >Send</button></p>
-    </form>
-</body>
-</html>
+    <body>
+        <div id="container" style="height: 400px"></div>
+        <script>
+            cartData = [];
+            $(function () {
+                $(document).ready(function () {
 
+                    $("#hltform").submit(function () {
+                        $.post($("#hltform").attr("action"), $("#hltform").serialize(), function (data) {
+
+                        });
+                        return false;
+                    });
+
+                    Highcharts.setOptions({
+                        global: {
+                            useUTC: false
+                        }
+                    });
+                    //Function bits
+                    function requestData(event) {
+
+                        $.getJSON("hlt.json", {
+                            time: $('input[name="time"]').val(),
+                            temp: $('input[name="temp"]').val()
+                        }, function (data) {
+                            chart.series[0].addPoint([data.time, data.temp], true);
+                        });
+                    };
+
+                    function brewSelect(dropdown) {
+                        var brewindex = dropdown.selectedIndex;
+                        var brewid = dropdown.options[brewindex].value;
+                        $.getJSON("hlt_full.json", function (data) {
+                            console.log(data);
+                        });
+                        return true;
+                    };
+
+                    var chart;
+
+                    //Chart bits
+                    chart = new Highcharts.StockChart({
+                        chart: {
+                            renderTo: 'container',
+                            type: 'spline',
+                            zoomType: 'x',
+                            events: {
+                                load: requestData
+                            }
+                        },
+                        xAxis: {
+                            type: 'datetime',
+                            title: {
+                                text: 'Time'
+                            },
+                            tickPixelInterval: 150
+
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'Temperature'
+                            }
+                        },
+                        rangeSelector: {
+                            buttons: [{
+                                type: 'second',
+                                count: 30,
+                                text: '30s'
+                            }, {
+                                type: 'minute',
+                                count: 1,
+                                text: '1m'
+                            }, {
+                                type: 'minute',
+                                count: 2,
+                                text: '2m'
+                            }, {
+                                type: 'minute',
+                                count: 5,
+                                text: '5m'
+                            }, {
+                                type: 'minute',
+                                count: 15,
+                                text: '15m'
+                            }, {
+                                type: 'all',
+                                text: 'All'
+                            }],
+                            inputEnabled: false
+                        },
+                        series: [{
+                            name: 'Temperature',
+                            data: []
+                        }]
+                    });
+                    setInterval(requestData, 4000);
+                });
+            });
+        </script>
+        <form id="hltform" method="post" action="/changehlttemp">
+            <p>
+                <label>HLT Temp:</label>
+                <input type="text" name="hlttemp" required>
+            </p>
+            <select name="brewid" onchange="brewSelect(this.form.brewid);" required>{% for id in brewid %}
+                <option value="{{ id[0] }}">{{ id[0] }}</option>{% endfor %}</select>
+            <p>
+                <button type="submit" id="newtempbtn">Send</button>
+            </p>
+        </form>
+    </body>
+
+</html>

@@ -14,7 +14,7 @@ def getConn():
 def hlt():
     conn = getConn()
     cursor = conn.cursor()
-    cursor.execute("SELECT id from brewlog")
+    cursor.execute("SELECT id from brewlog ORDER BY id DESC")
     brewlist = cursor.fetchall()
     conn.close()
     return render_template('hltgraph.html',brewid=brewlist)
@@ -22,7 +22,7 @@ def hlt():
 @app.route('/changehlttemp', methods=['POST'])
 def changehlttemp():
     session['hlttemp'] = request.form['hlttemp']
-    session['brewid'] = request.form['brewid']
+    session['brewid'] = request.form['brewdown']
     brewid = session['brewid']
     temp = session['hlttemp']
     print "update temp to " + temp
@@ -33,10 +33,13 @@ def changehlttemp():
     conn.close()
     return redirect(url_for('hlt'))
 
-def getcurrentdata():
+def getcurrentdata(brewid):
     conn = getConn()
     cursor = conn.cursor()
-    cursor.execute("SELECT time,temp FROM templog where time = (select max(time) from templog)")
+#    cursor.execute("SELECT time,temp FROM templog where brewid = %s AND time = (select max(time) from templog)",[brewid])
+
+
+    cursor.execute("SELECT time, temp FROM templog WHERE brewid = %s ORDER BY time DESC LIMIT 1",[brewid])
     conn.close()
     return cursor.fetchone()
 
@@ -47,23 +50,20 @@ def getalldata(brewid):
     conn.close()
     return cursor.fetchall()
 
-@app.route('/hlt_full.json')
-def full_json():
-    data = list(getalldata(3))
+@app.route('/hlt_full/<int:B_id>')
+def full_json(B_id):
+    data = list(getalldata(B_id))
     newdata = list()
     for entry in data:
         newdate = int(time.mktime(entry[0].timetuple()) * 1000)
-        newentry = {"time": newdate,"temp": entry[1]}
+        newentry = [newdate, entry[1]]
         newdata.append(newentry)
     return Response(json.dumps(newdata), mimetype='application/json')
 
-@app.route('/hlt.json')
-def latest_json():
-    data = list(getcurrentdata())
+@app.route('/hlt_new/<int:B_id>')
+def latest_json(B_id):
+    data = list(getcurrentdata(B_id))
     data[0] = int(time.mktime(data[0].timetuple()) * 1000)
-    print type(data[0])
-
-    #return json.dumps(data)
     thetime = data[0]
     thetemp = data[1]
     return jsonify(time=thetime, temp=thetemp)

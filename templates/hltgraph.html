@@ -14,10 +14,17 @@
     <body>
         <div id="container" style="height: 400px"></div>
         <script>
-            cartData = [];
             $(function () {
                 $(document).ready(function () {
-
+                    // gathers hlt data when brewid is selected
+                    $("#brewdown").change(function() {
+                        brewid = $('#brewdown option:selected').text();
+                        var hltfull_url = "hlt_full/" + brewid;
+                        $.getJSON(hltfull_url, function (data){
+                            chart.series[0].setData(data,true);
+                        });
+                        return false; 
+                    });
                     $("#hltform").submit(function () {
                         $.post($("#hltform").attr("action"), $("#hltform").serialize(), function (data) {
 
@@ -32,8 +39,8 @@
                     });
                     //Function bits
                     function requestData(event) {
-
-                        $.getJSON("hlt.json", {
+                        var hltnew_url = "hlt_new/" + brewid;
+                        $.getJSON(hltnew_url, {
                             time: $('input[name="time"]').val(),
                             temp: $('input[name="temp"]').val()
                         }, function (data) {
@@ -41,15 +48,11 @@
                         });
                     };
 
-                    function brewSelect(dropdown) {
-                        var brewindex = dropdown.selectedIndex;
-                        var brewid = dropdown.options[brewindex].value;
-                        $.getJSON("hlt_full.json", function (data) {
-                            console.log(data);
-                        });
-                        return true;
-                    };
-
+                    
+                    $('#brewdown').val(0);
+                    $('#brewdown').change();
+                    
+                    brewid = $('#brewdown option:selected').text();
                     var chart;
 
                     //Chart bits
@@ -116,7 +119,8 @@
                 <label>HLT Temp:</label>
                 <input type="text" name="hlttemp" required>
             </p>
-            <select name="brewid" onchange="brewSelect(this.form.brewid);" required>{% for id in brewid %}
+            <select name="brewdown" id="brewdown"  required>
+                {% for id in brewid %}
                 <option value="{{ id[0] }}">{{ id[0] }}</option>{% endfor %}</select>
             <p>
                 <button type="submit" id="newtempbtn">Send</button>

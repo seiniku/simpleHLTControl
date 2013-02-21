@@ -6,19 +6,22 @@ app = Flask(__name__)
 # configuration
 app.config['SECRET_KEY'] = 'F34TF$($e34D';
 
+# Returns a connection to a mysql server. This is configured to connect to a remote server due to slow disk performance on the raspberry pi, but could be local if a faster disk is used.
 def getConn():
     conn = mdb.connect('chop.bad.wolf','brew','brewit','brewery');
     return conn
 
+#Renders the template for hlt temperatures
 @app.route('/hlt')
 def hlt():
     conn = getConn()
     cursor = conn.cursor()
-    cursor.execute("SELECT id from brewlog ORDER BY id DESC")
+    cursor.execute("SELECT id,brew,date_format(brewdate, '%m/%d/%Y') from brewlog ORDER BY id DESC")
     brewlist = cursor.fetchall()
     conn.close()
     return render_template('hltgraph.html',brewid=brewlist)
 
+#Does the work of updating the database to set a new temperature for the other process (simplehlt.py)
 @app.route('/changehlttemp', methods=['POST'])
 def changehlttemp():
     session['hlttemp'] = request.form['hlttemp']
@@ -33,40 +36,36 @@ def changehlttemp():
     conn.close()
     return redirect(url_for('hlt'))
 
+# gets the latest time and temp for a brewid from the sql connection in getconn
 def getcurrentdata(brewid):
     conn = getConn()
     cursor = conn.cursor()
-#    cursor.execute("SELECT time,temp FROM templog where brewid = %s AND time = (select max(time) from templog)",[brewid])
-
-
-    cursor.execute("SELECT time, temp FROM templog WHERE brewid = %s ORDER BY time DESC LIMIT 1",[brewid])
+    cursor.execute("SELECT unix_timestamp(time)*1000,temp FROM templog WHERE brewid = %s ORDER BY time DESC LIMIT 1",[brewid])
     conn.close()
     return cursor.fetchone()
 
+# gets all the data about a brewid from the database
 def getalldata(brewid):
     conn = getConn()
     cursor = conn.cursor()
-    cursor.execute("Select time,temp from templog where brewid=%s order by time",[brewid])
+    cursor.execute("Select unix_timestamp(time)*1000,temp from templog where brewid=%s order by time",[brewid])
     conn.close()
     return cursor.fetchall()
 
+# returns all data about a brewid as a json object
 @app.route('/hlt_full/<int:B_id>')
 def full_json(B_id):
     data = list(getalldata(B_id))
-    newdata = list()
-    for entry in data:
-        newdate = int(time.mktime(entry[0].timetuple()) * 1000)
-        newentry = [newdate, entry[1]]
-        newdata.append(newentry)
-    return Response(json.dumps(newdata), mimetype='application/json')
+    return Response(json.dumps(data), mimetype='application/json')
 
+# returns json for the latest time and temp of a brewid
 @app.route('/hlt_new/<int:B_id>')
 def latest_json(B_id):
     data = list(getcurrentdata(B_id))
-    data[0] = int(time.mktime(data[0].timetuple()) * 1000)
     thetime = data[0]
     thetemp = data[1]
     return jsonify(time=thetime, temp=thetemp)
 
+#starts the dev web server
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=80,debug=True)

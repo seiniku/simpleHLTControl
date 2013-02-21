@@ -18,7 +18,7 @@
                 $(document).ready(function () {
                     // gathers hlt data when brewid is selected
                     $("#brewdown").change(function() {
-                        brewid = $('#brewdown option:selected').text();
+                        brewid = $('#brewdown option:selected').val();
                         var hltfull_url = "hlt_full/" + brewid;
                         $.getJSON(hltfull_url, function (data){
                             chart.series[0].setData(data,true);
@@ -27,7 +27,6 @@
                     });
                     $("#hltform").submit(function () {
                         $.post($("#hltform").attr("action"), $("#hltform").serialize(), function (data) {
-
                         });
                         return false;
                     });
@@ -52,7 +51,7 @@
                     $('#brewdown').val(0);
                     $('#brewdown').change();
                     
-                    brewid = $('#brewdown option:selected').text();
+                    brewid = $('#brewdown option:selected').val();
                     var chart;
 
                     //Chart bits
@@ -121,7 +120,7 @@
             </p>
             <select name="brewdown" id="brewdown"  required>
                 {% for id in brewid %}
-                <option value="{{ id[0] }}">{{ id[0] }}</option>{% endfor %}</select>
+                <option value="{{ id[0] }}">{{ id[1] + " - " + id[2] }}</option>{% endfor %}</select>
             <p>
                 <button type="submit" id="newtempbtn">Send</button>
             </p>

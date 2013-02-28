@@ -70,11 +70,10 @@ def getpin(element):
 Configures all pins as output pins and sets them to 'low'. This is to prevent any relay from being left on
 unexpectedly.
 '''
-def turnItAllOff(jee, gpioCount):
+def turnItAllOff(jee, pin):
     print "Disabling all output pins"
-    for pin in range(gpioCount):
-        jee.config(pin, jee.OUTPUT)
-        switch(jee,pin,False)
+    jee.config(pin, jee.OUTPUT)
+    switch(jee,pin,False)
 
 def getUserInput():
     docontinue = raw_input("Are we continuing the last brew (Yes,no)")
@@ -133,10 +132,10 @@ def tempcontrol():
 
     #there are 8 plugs on the JeeLabs Output Plug.
     gpios = 8
-    #create output plug object
+    #create output plug object. the address depends on the solder jumper
     jee = Adafruit_MCP230XX(address = 0x26, num_gpios = gpios, busnum = 1)
     #set all output plug pins to output and off
-    turnItAllOff(jee,gpios)
+    turnItAllOff(jee,pin)
     #the temp swing that is allowed. ie temp +- band
     band = 0.2
     duty = 0
@@ -162,7 +161,7 @@ def tempcontrol():
 	    print "switching"
             switch(jee, pin, duty)
     except (KeyboardInterrupt, SystemExit):
-        turnItAllOff(jee,gpios)
+        turnItAllOff(jee,pin)
         database.close()
         sys.exit()
 

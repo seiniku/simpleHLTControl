@@ -16,3 +16,6 @@ aptitude install pip
 pip install flask
 
 pip install simplejson
+
+
+<img src="https://github.com/seiniku/simpleHLTControl/raw/master/sitecap.PNG" />

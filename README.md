@@ -9,10 +9,12 @@ This depends on the jeelabs output plug to have the address 0x26. Note that the 
 
 Adafruit libraries are being used to interface with the output plug in a readable way. They were taken from https://github.com/adafruit/Adafruit-Raspberry-Pi-Python-Code, I take no credit for them. Worked great out of the box.
 
-aptitude install python-mysqldb
-
-aptitude install pip
+aptitude install python-mysqldb pip owfs
 
 pip install flask
 
 pip install simplejson
+
+
+Here's some test data on the website:
+<img src="https://github.com/seiniku/simpleHLTControl/raw/master/sitecap.PNG" />

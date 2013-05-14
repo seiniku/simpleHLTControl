@@ -18,8 +18,12 @@ def hlt():
     cursor = conn.cursor()
     cursor.execute("SELECT id,brew,date_format(brewdate, '%m/%d/%Y') from brewlog ORDER BY id DESC")
     brewlist = cursor.fetchall()
+    cursor.execute("SELECT id,description from sensors order by description ASC")
+    sensorlist = cursor.fetchall()
+    cursor.execute("select * from heating order by description ASC")
+    heating = cursor.fetchall()
     conn.close()
-    return render_template('hltgraph.html',brewid=brewlist)
+    return render_template('hltgraph.html',brewid=brewlist,sensors=sensorlist,elements=heating)
 
 #Does the work of updating the database to set a new temperature for the other process (simplehlt.py)
 @app.route('/changehlttemp', methods=['POST'])
@@ -40,7 +44,7 @@ def changehlttemp():
 def getcurrentdata(brewid):
     conn = getConn()
     cursor = conn.cursor()
-    cursor.execute("SELECT unix_timestamp(time)*1000,temp FROM templog WHERE brewid = %s ORDER BY time DESC LIMIT 1",[brewid])
+    cursor.execute("SELECT unix_timestamp(time)*1000,temp,target FROM templog WHERE brewid = %s ORDER BY time DESC LIMIT 1",[brewid])
     conn.close()
     return cursor.fetchone()
 
@@ -64,7 +68,8 @@ def latest_json(B_id):
     data = list(getcurrentdata(B_id))
     thetime = data[0]
     thetemp = data[1]
-    return jsonify(time=thetime, temp=thetemp)
+    thetarget = data[2]
+    return jsonify(time=thetime, temp=thetemp, target=thetarget)
 
 #starts the dev web server
 if __name__ == '__main__':

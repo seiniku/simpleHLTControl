@@ -41,9 +41,12 @@
                         var hltnew_url = "hlt_new/" + brewid;
                         $.getJSON(hltnew_url, {
                             time: $('input[name="time"]').val(),
-                            temp: $('input[name="temp"]').val()
+                            temp: $('input[name="temp"]').val(),
+                            temp: $('input[name="target"]').val()
                         }, function (data) {
-                            chart.series[0].addPoint([data.time, data.temp], true);
+                        document.getElementById('currenttemp').innerHTML = data.temp;
+                        document.getElementById('currenttarget').innerHTML = data.target;
+                        chart.series[0].addPoint([data.time, data.temp], true);
                         });
                     };
 
@@ -113,16 +116,30 @@
                 });
             });
         </script>
+        <p>Current Temp:  <b id=currenttemp>??</b>
+        <br/>
+        Current Target: <b id=currenttarget>??</b>
+        </p>
         <form id="hltform" method="post" action="/changehlttemp">
             <p>
-                <label>HLT Temp:</label>
+                <label>Target Temp:</label>
                 <input type="text" name="hlttemp" required>
             </p>
             <select name="brewdown" id="brewdown"  required>
                 {% for id in brewid %}
                 <option value="{{ id[0] }}">{{ id[1] + " - " + id[2] }}</option>{% endfor %}</select>
+
+            <br/>
+            The following do nothing..
+            <br/>
+            <select name="sensordown" id="sensordown" required>
+                {% for sensor in sensors %}
+                <option value="{{ sensor[0] }}">{{ sensor[1] }}</option>{% endfor %}</select>
+            <select name="elementdown" id="elementdown" required>
+                {% for element in elements %}
+                <option value="{{ element[0] }}">{{ element[1] }}</option>{% endfor %}</select>
             <p>
-                <button type="submit" id="newtempbtn">Send</button>
+               <button type="submit" id="newtempbtn">Send</button>
             </p>
         </form>
     </body>

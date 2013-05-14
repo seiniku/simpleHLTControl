@@ -146,7 +146,7 @@ def tempcontrol():
     try:
         while (True):
             temp = get_temp()
-            if temp = 222:
+            if temp == 222:
                 break
             if temp < (target - 10):
                 duty = 100

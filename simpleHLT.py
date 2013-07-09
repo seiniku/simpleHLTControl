@@ -9,7 +9,13 @@ Takes the pin on a jeelabs output plug and sets it to 1 or 0 depending on if the
 '''
 def switch(jee,pin,duty_cycle):
     cycle_time = 2
-    if duty_cycle > 0:
+    if duty_cycle == 100:
+        jee.output(pin,1)
+        time.sleep(cycle_time)
+    elif duty_cycle == 0:
+        jee.output(pin,0)
+        time.sleep(cycle_time)
+    else:
         duty = duty_cycle/100.0
         #on for xtime
         jee.output(pin,1)
@@ -19,10 +25,6 @@ def switch(jee,pin,duty_cycle):
         jee.output(pin,0)
 	print "off"
         time.sleep(cycle_time*(1.0-duty))
-    else:
-        jee.output(pin,0)
-        time.sleep(cycle_time)
-
     return
 
 # returns temperature of the 1wire sensor. Needs to be abstracted more.
@@ -35,6 +37,17 @@ def get_temp():
             return temp + 2
     except:
         return 222
+
+def new_temp(sensor):
+    try:
+        sensorpath = '/sys/bus/w1/devices/' + sensor + '/w1_slave'
+        with open(sensorpath,'r') as f:
+            temp_c = float(f.read().split("t=")[1].strip()) / 1000
+            temp = (9.0/5.0)*temp_c + 32
+            return temp
+    except:
+        return 999
+
 
 #makes database connection, and creates the table if it doesn't exist yet.
 def connectdb():
@@ -104,6 +117,11 @@ def settarget(brewid, element, target, sql):
     sql.commit()
     cursor.close()
 
+def getsettings(brewid, element, sql):
+    ids = brewid, element
+    cursor = sql.cursor()
+    cursor.execute('SELECT target, sensor0 FROM `tempconfig` INNER join sensors on tempconfig.sensor=sensors.id WHERE brewid = %s AND element = %s', ids)
+    return cursor.fetchone()
 
 #gets the target from the database
 def gettarget(brewid, element, sql):
@@ -143,11 +161,11 @@ def tempcontrol():
     #the temp swing that is allowed. ie temp +- band
     band = 0.2
     duty = 0
+    target,sensor = getsettings(brewid, element, database)
     try:
         while (True):
-            temp = get_temp()
-            if temp == 222:
-                break
+            #temp = get_temp()
+            temp = new_temp(sensor)
             if temp < (target - 10):
                 duty = 100
             elif (target - 10) < temp < (target - band):
@@ -163,11 +181,9 @@ def tempcontrol():
                 duty = target - 300
             print "temp: " + str(temp) + " duty: " + str(duty) + " target: " + str(target)
             print "updating database"
-	    updatedb(brewid, temp, target, duty, element, database)
-            print "getting target"
-	    target = gettarget(brewid, element, database)
-	    print "switching"
+            updatedb(brewid, temp, target, duty, element, database)
             switch(jee, pin, duty)
+            target,sensor = getsettings(brewid, element, database)
     except (KeyboardInterrupt, SystemExit):
         turnItAllOff(jee,pin)
         database.close()

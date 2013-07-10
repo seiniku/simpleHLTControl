@@ -30,12 +30,14 @@ def hlt():
 def changehlttemp():
     session['hlttemp'] = request.form['hlttemp']
     session['brewid'] = request.form['brewdown']
+    session['sensor'] = request.form['sensordown']
     brewid = session['brewid']
     temp = session['hlttemp']
-    print "update temp to " + temp
+    sensor = session['sensor']
+    print "update temp to " + temp + ", sensor to " + sensor
     conn = getConn()
     cursor = conn.cursor()
-    cursor.execute("UPDATE tempconfig SET target=%s WHERE brewid=%s",[temp,brewid])
+    cursor.execute("UPDATE tempconfig SET target=%s, sensor=%s WHERE brewid=%s",[temp,sensor,brewid])
     conn.commit()
     conn.close()
     return redirect(url_for('hlt'))
